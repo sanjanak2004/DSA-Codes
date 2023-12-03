@@ -1,0 +1,178 @@
+#include<iostream>
+#define MAX 30
+using namespace std;
+
+// Function to check if a character is an operand
+int isoperand(char ch) {
+    return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) ? 1 : 0;
+}
+
+// Function to check if a character is an operator
+int isoperator(char ch) {
+    return (ch == '+' || ch == '-' || ch == '/' || ch == '*' || ch == '$' || ch == '^') ? 1 : 0;
+}
+
+// Node structure for threaded binary tree
+struct node {
+    struct node* lchild;
+    int lthread;
+    char data;
+    int rthread;
+    struct node* rchild;
+};
+
+// Function to find the leftmost node in a threaded binary tree
+node* leftmost(node* curr) {
+    while (curr->lthread != 1) {
+        curr = curr->lchild;
+    }
+    return (curr);
+}
+
+// Function to find the rightmost node in a threaded binary tree
+node* rightmost(node* curr) {
+    while (curr->rthread != 1) {
+        curr = curr->rchild;
+    }
+    return (curr);
+}
+
+// Class for threaded binary tree
+class TBT {
+private:
+    node* root;
+    node* dummy;
+
+public:
+    TBT();
+    void create(char postfix[MAX]);
+    void inorder();
+    void preorder();
+};
+
+// Constructor for TBT class
+TBT::TBT() {
+    root = NULL;
+    dummy = NULL;
+}
+
+// Function to create a threaded binary tree from a postfix expression
+void TBT::create(char postfix[MAX]) {
+    int i, top = -1;
+    node* stack[MAX];
+    node* temp;
+    node* succ_node;
+    node* predi_node;
+    char ch;
+
+    dummy = new node;
+    dummy->lchild = root;
+    dummy->lthread = 0;
+    dummy->data = '\0';
+    dummy->rthread = 1;
+    dummy->rchild = dummy;
+
+    for (i = 0; postfix[i] != '\0'; i++) {
+        ch = postfix[i];
+        temp = new node;
+        temp->lchild = dummy;
+        temp->lthread = 1;
+        temp->data = ch;
+        temp->rthread = 1;
+        temp->rchild = dummy;
+
+        if (isoperand(ch)) {
+            stack[++top] = temp;
+        } else if (isoperator(ch)) {
+            temp->rchild = stack[top--];
+            temp->lchild = stack[top--];
+            temp->lthread = 0;
+            temp->rthread = 0;
+
+            predi_node = leftmost(temp->rchild);
+            predi_node->lchild = temp;
+
+            succ_node = rightmost(temp->lchild);
+            succ_node->rchild = temp;
+
+            stack[++top] = temp;
+        }
+        // You might want to handle the case when the character is neither operand nor operator.
+    }
+
+    root = stack[top--];
+    dummy->lchild = root;
+}
+
+// Function to perform inorder traversal of the threaded binary tree
+void TBT::inorder() {
+    int flag = 0;
+    node* curr = dummy->lchild;
+
+    do {
+        if (((curr->lthread) != 1) && (flag == 0)) {
+            curr = curr->lchild;
+        } else {
+            cout << curr->data << " ";
+            flag = curr->rthread;
+            curr = curr->rchild;
+        }
+    } while (curr != dummy);
+}
+
+// Function to perform preorder traversal of the threaded binary tree
+void TBT::preorder() {
+    int flag = 0;
+    node* curr = dummy->lchild;
+
+    do {
+        if (flag == 0)
+            cout << curr->data << " ";
+
+        if (((curr->lthread) != 1) && (flag == 0)) {
+            curr = curr->lchild;
+        } else {
+            flag = curr->rthread;
+            curr = curr->rchild;
+        }
+    } while (curr != dummy);
+}
+
+// Main function
+int main() {
+    char postfix[MAX];
+    int ch;
+    TBT t;
+
+    cout << "\nEnter a postfix expression: ";
+    cin >> postfix;
+
+    while (1) {
+        cout << "\nMENU\n";
+        cout << "1. Create a tree\n2. Inorder Traversal\n3. Preorder Traversal\n4. Exit";
+        cout << "\n\nEnter your choice: ";
+        cin >> ch;
+
+        switch (ch) {
+            case 1:
+                cout << "\nCreating a tree...";
+                t.create(postfix);
+                cout << "\nNODE IS CREATED.\n";
+                break;
+            case 2:
+                cout << "\nInorder Traversal.\n";
+                t.inorder();
+                break;
+            case 3:
+                cout << "\nPreorder Traversal.\n";
+                t.preorder();
+                break;
+            case 4:
+                return 0;  // Using return instead of exit(0)
+            default:
+                cout << "\nInvalid choice. Try again.\n";
+        }
+    }
+
+    return 0;
+}
